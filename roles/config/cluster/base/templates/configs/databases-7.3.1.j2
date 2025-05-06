@@ -7,3 +7,11 @@ KNOX:
     knox_gateway_database_name: {{ databases.KNOX.name }}
     knox_gateway_database_user: {{ databases.KNOX.user }}
     knox_gateway_database_password: {{ databases.KNOX.password }}
+DATAVIZ:
+  SERVICEWIDE:
+    METASTORE_DB_HOST: {{ databases.DATAVIZ.host }}
+    METASTORE_DB_PORT: {{ databases.DATAVIZ.port }}
+    METADATA_STORE: {{ databases.DATAVIZ.type | format_database_type }}
+    METASTORE_DB_NAME: {{ databases.DATAVIZ.name }}
+    METASTORE_DB_USER: {{ databases.DATAVIZ.user }}
+    METASTORE_DB_PASSWORD: {{ databases.DATAVIZ.password }}

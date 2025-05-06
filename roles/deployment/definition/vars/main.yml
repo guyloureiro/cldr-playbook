@@ -142,3 +142,11 @@ database_defaults:
     name: knox
     user: knox
     password: "{{ database_default_password }}"
+  DATAVIZ:
+    host: "{{ database_host }}"
+    port: "{{ database_type | default_database_port }}"
+    type: "{{ database_type }}"
+    name: dataviz
+    user: dataviz
+    password: "{{ database_default_password }}"
+  
