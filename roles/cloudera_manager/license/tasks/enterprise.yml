@@ -44,8 +44,9 @@
     --header 'Content-Type:multipart/form-data'
     --form license=@/tmp/license.txt
     {{ license_response.url }}
-  args:
-    warn: False
+#  The following fails in later ansible versions
+#  args:
+#    warn: False
   register: response
   failed_when: "'owner' not in response.stdout"
   when: license_not_installed
