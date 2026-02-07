@@ -14,15 +14,35 @@
 
 ---
 postgresql_version: "{{ database_version }}"
+
+# Handle the RHEL 9 OpenSSL / PGDG Version Gap
+# If RHEL 9 and version < 9.7, pin to 14.19 to avoid the libcrypto.so.3(OPENSSL_3.4.0) error.
+pg_version_suffix: >-
+  {{ '-14.19-1PGDG.rhel9' 
+     if (ansible_distribution_major_version == '9' and ansible_distribution_version is version('9.7', '<')) 
+     else '' }}
+
+# Paths and Naming
 postgresql_data_dir: /var/lib/pgsql/{{ postgresql_version }}/data
 postgresql_bin_path: /usr/pgsql-{{ postgresql_version }}/bin
 postgresql_config_path: /var/lib/pgsql/{{ postgresql_version }}/data
 postgresql_daemon: postgresql-{{ postgresql_version }}.service
+
+# Dynamic Package List
 postgresql_packages:
-  - postgresql{{ postgresql_version | regex_replace('\.','') }}
-  - postgresql{{ postgresql_version | regex_replace('\.','') }}-server
-  - postgresql{{ postgresql_version | regex_replace('\.','') }}-libs
-  - postgresql{{ postgresql_version | regex_replace('\.','') }}-contrib
-  #- postgresql{{ postgresql_version | regex_replace('\.','') }}-devel
-postgresql_python_library: python-psycopg2
+  - "postgresql{{ postgresql_version | regex_replace('\\.','') }}{{ pg_version_suffix }}"
+  - "postgresql{{ postgresql_version | regex_replace('\\.','') }}-server{{ pg_version_suffix }}"
+  - "postgresql{{ postgresql_version | regex_replace('\\.','') }}-libs{{ pg_version_suffix }}"
+  - "postgresql{{ postgresql_version | regex_replace('\\.','') }}-contrib{{ pg_version_suffix }}"
+  #-"postgresql{{ postgresql_version | regex_replace('\\.','') }}-devel{{ pg_version_suffix }}"
+
+# RHEL 8 vs RHEL 9 Library and Service Hacks
+# Use python3-psycopg2 for RHEL 8/9; older versions might need python-psycopg2
+postgresql_python_library: "{{ 'python3-psycopg2' if ansible_distribution_major_version in ['8', '9'] else 'python-psycopg2' }}"
+
+# Service Patches (Applied globally or can be version-restricted)
+postgresql_service_state: started
+postgresql_restarted_state: restarted
+postgresql_service_enabled: true
+
 
