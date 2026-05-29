@@ -74,3 +74,19 @@
     state: present
   ignore_errors: yes
 
+# https://docs.cloudera.com/cdp-private-cloud-data-services/1.5.5/upgrade-ecs/topics/cdppvc-installation-Pre-upgrade-checklist.html
+- name: Prevent issues with monitoring or container deployment - common min req for complex Java apps
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_watches
+    value: '524288'
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Prevent issues with monitoring or container deployment - max number of inotify instances that can be created per user
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_instances
+    value: '512'
+    sysctl_set: true
+    state: present
+    reload: true
