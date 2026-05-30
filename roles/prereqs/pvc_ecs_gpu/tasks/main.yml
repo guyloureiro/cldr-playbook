@@ -19,22 +19,6 @@
 ---
 # TODO: Add Nvidia drivers
 
-
-# https://docs.nvidia.com/datacenter/cloud-native/edge/latest/nvidia-gpu-with-device-edge.html#installing-the-nvidia-container-toolkit 
-
-# dnf config-manager --add-repo=https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
-# sudo dnf module install nvidia-driver:525
-# sudo dnf install nvidia-fabric-manager libnvidia-nscq-525
-# echo 'blacklist nouveau' | sudo tee /etc/modprobe.d/nouveau-blacklist.conf
-# sudo dracut --force
-# sudo systemctl enable nvidia-fabricmanager.service
-# sudo systemctl enable nvidia-persistenced.service
-
-# wget  https://nvidia.github.io/libnvidia-container/rhel8.8/libnvidia-container.repo -L /etc/yum.repos.d/libnvidia-container.repo
-# dnf install nvidia-container-toolkit -y
-
-# systemctl reboot
-
 - name: Install Nvidia repository
   get_url:
     url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel{{ ansible_distribution_major_version }}/x86_64/cuda-rhel{{ ansible_distribution_major_version }}.repo"
@@ -43,52 +27,67 @@
 
 - name: Install Nvidia Container repository
   get_url:
-    url: "https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo"
-    dest: /etc/yum.repos.d/nvidia-container-toolkit.repo
+    url: "https://nvidia.github.io/libnvidia-container/rhel{{ ansible_distribution_version }}/libnvidia-container.repo"
+    dest: /etc/yum.repos.d/
     mode: '0644'
 
-#- name: Install Nvidia Container repository
-#  get_url:
-#    url: "https://nvidia.github.io/libnvidia-container/rhel{{ ansible_distribution_major_version }}/libnvidia-container.repo"
-#    dest: /etc/yum.repos.d/
-#    mode: '0644'
+# -------------------------------------------------------------------------
+# CLEANUP: Clear out old NvFBCOpenGL along with NVML to stop depsolve errors
+# -------------------------------------------------------------------------
+- name: Remove conflicting legacy Nvidia 525 tracking packages
+  ansible.builtin.shell: "rpm -e --nodeps nvidia-driver-NVML nvidia-driver-NvFBCOpenGL nvidia-driver-devel nvidia-fabric-manager libnvidia-nscq-525 || true"
+  changed_when: false
 
-- name: Enable Nvidia module 
-  dnf:
-    name: '@nvidia-driver:525'
+# -------------------------------------------------------------------------
+# MODULE STREAM MANAGEMENT: Reset and switch to the new 610-open stream
+# -------------------------------------------------------------------------
+- name: Reset nvidia-driver module stream
+  ansible.builtin.dnf:
+    name: nvidia-driver
+    state: reset_modules
+
+- name: Switch and enable nvidia-driver 610-open module stream
+  ansible.builtin.dnf_module:
+    name: nvidia-driver
+    module_stream: "610-open"
+    state: enabled
+
+# -------------------------------------------------------------------------
+# INSTALLATION: Install CUDA meta-package & driver packages via the stream
+# -------------------------------------------------------------------------
+- name: Install Nvidia Driver packages via stream profiles
+  ansible.builtin.dnf:
+    name: "@nvidia-driver:default"
     state: present
 
-- name: Install nvidia-fabric-manager 
-  dnf:
-    name: 'nvidia-fabric-manager'
-    state: present
-
-- name: Enable Nvidia libnvidia-nscq-525 
-  dnf:
-    name: 'libnvidia-nscq-525'
+- name: Install CUDA Meta-package
+  ansible.builtin.dnf:
+    name: "cuda"
     state: present
 
 - name: Blacklist nouveau
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/modprobe.d/nouveau-blacklist.conf
     regexp: 'blacklist nouveau'
     line: 'blacklist nouveau'
     create: true
 
 - name: Dracut
-  shell: dracut --force
+  ansible.builtin.shell: dracut --force
+  changed_when: true
 
 - name: Enable nvidia-fabricmanager
-  service:
+  ansible.builtin.service:
     name: nvidia-fabricmanager
     enabled: yes
+  failed_when: false # Safe-guard in case fabric-manager isn't used by the 610-open profile
 
 - name: Enable nvidia-persistenced
-  service:
+  ansible.builtin.service:
     name: nvidia-persistenced
     enabled: yes
 
 - name: Install nvidia-container-toolkit 
-  dnf:
+  ansible.builtin.dnf:
     name: nvidia-container-toolkit
     state: present
