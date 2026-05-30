@@ -47,10 +47,9 @@
     state: reset_modules
 
 - name: Switch and enable nvidia-driver 610-open module stream
-  ansible.builtin.dnf_module:
-    name: nvidia-driver
-    module_stream: "610-open"
-    state: enabled
+  ansible.builtin.dnf:
+    name: '@nvidia-driver:610-open'
+    state: present
 
 # -------------------------------------------------------------------------
 # INSTALLATION: Install CUDA meta-package & driver packages via the stream
