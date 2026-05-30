@@ -41,10 +41,15 @@
 # -------------------------------------------------------------------------
 # MODULE STREAM MANAGEMENT: Reset and switch to the new 610-open stream
 # -------------------------------------------------------------------------
-- name: Reset nvidia-driver module stream
-  ansible.builtin.dnf:
-    name: nvidia-driver
-    state: reset_modules
+
+#- name: Reset nvidia-driver module stream
+#  ansible.builtin.dnf:
+#    name: nvidia-driver
+#    state: reset_modules
+
+- name: Reset nvidia-driver module stream via shell (Ansible 2.15 compatibility)
+  ansible.builtin.shell: "dnf module reset nvidia-driver -y"
+  changed_when: false
 
 - name: Switch and enable nvidia-driver 610-open module stream
   ansible.builtin.dnf:
