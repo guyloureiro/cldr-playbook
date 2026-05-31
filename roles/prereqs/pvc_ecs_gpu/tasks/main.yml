@@ -31,13 +31,6 @@
     dest: /etc/yum.repos.d/
     mode: '0644'
 
-# -------------------------------------------------------------------------
-# CLEANUP: Clear out old NvFBCOpenGL along with NVML to stop depsolve errors
-# -------------------------------------------------------------------------
-#- name: Remove conflicting legacy Nvidia 525 tracking packages
-#  ansible.builtin.shell: "rpm -e --nodeps nvidia-driver-NVML nvidia-driver-NvFBCOpenGL nvidia-driver-devel nvidia-fabric-manager libnvidia-nscq-525 || true"
-#  changed_when: false
-
 # =========================================================================
 # CLEANUP PHASE: Force-purge all existing Nvidia/kmod infrastructure remnants
 # =========================================================================
@@ -60,44 +53,7 @@
   ansible.builtin.dnf:
     name: '@nvidia-driver:latest-dkms'
     state: present
-    disable_excludes: all  # <-- This is valid here because it's a native dnf task
-
-# =========================================================================
-# CLEANUP PHASE: Force-purge all existing Nvidia/kmod infrastructure remnants
-# =========================================================================
-#- name: Completely purge all legacy and open-source Nvidia packaging components
-#  ansible.builtin.shell: "dnf remove 'nvidia*' 'kmod-nvidia*' 'cuda*' -y"
-#  failed_when: false  # Bypasses errors if a host is already pristine
-#  disable_excludes: all
-#
-#- name: Clean dnf system cache data structures
-#  ansible.builtin.shell: "dnf clean all && rm -rf /var/cache/dnf"
-#  changed_when: false
-#
-## -------------------------------------------------------------------------
-## MODULE STREAM MANAGEMENT: Reset and switch to the new 610-open stream
-## -------------------------------------------------------------------------
-#
-##- name: Reset nvidia-driver module stream
-##  ansible.builtin.dnf:
-##    name: nvidia-driver
-##    state: reset_modules
-#
-#- name: Reset nvidia-driver module stream via shell (Ansible 2.15 compatibility)
-#  ansible.builtin.shell: "dnf module reset nvidia-driver -y"
-#  changed_when: false
-#
-##- name: Switch and enable nvidia-driver 610-open module stream
-##  ansible.builtin.dnf:
-##    name: '@nvidia-driver:610-open'
-##    state: present
-#
-#- name: Track standard driver stream natively
-#  ansible.builtin.dnf:
-#    name: '@nvidia-driver:latest-dkms'
-#    state: present
-#    disable_excludes: all  # <-- Bypasses the strict 'exclude filtering' on kernel packages
-
+    disable_excludes: all  # <-- Valid here because it's a native dnf task
 
 # -------------------------------------------------------------------------
 # INSTALLATION: Install flat tracking packages directly to dodge parsing limits
@@ -109,17 +65,6 @@
       - nvidia-driver-cuda
     state: present
     disable_excludes: all
-
-#- name: Install Nvidia Driver packages via stream profiles
-#  ansible.builtin.dnf:
-#    name: "@nvidia-driver:default"
-#    state: present
-
-#- name: Install CUDA Meta-package
-#    name: "cuda"
-#  ansible.builtin.dnf:
-#    state: present
-#    disable_excludes: all
 
 - name: Install Targeted CUDA Toolkit Components
   ansible.builtin.dnf:
@@ -143,16 +88,15 @@
 - name: Enable nvidia-fabricmanager
   ansible.builtin.service:
     name: nvidia-fabricmanager
-    enabled: yes
-  failed_when: false # Safe-guard in case fabric-manager isn't used by the 610-open profile
+    enabled: true
+  failed_when: false # Safe-guard in case fabric-manager isn't required by the architecture configuration
 
 - name: Enable nvidia-persistenced
   ansible.builtin.service:
     name: nvidia-persistenced
-    enabled: yes
+    enabled: true
 
 - name: Install nvidia-container-toolkit 
   ansible.builtin.dnf:
     name: nvidia-container-toolkit
     state: present
-
