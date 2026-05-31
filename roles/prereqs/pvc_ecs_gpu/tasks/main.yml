@@ -42,37 +42,61 @@
 # CLEANUP PHASE: Force-purge all existing Nvidia/kmod infrastructure remnants
 # =========================================================================
 - name: Completely purge all legacy and open-source Nvidia packaging components
-  ansible.builtin.shell: "dnf remove 'nvidia*' 'kmod-nvidia*' 'cuda*' -y"
+  ansible.builtin.shell: "dnf remove 'nvidia*' 'kmod-nvidia*' 'cuda*' -y --disableexcludes=all"
   failed_when: false  # Bypasses errors if a host is already pristine
-  disable_excludes: all
 
 - name: Clean dnf system cache data structures
-  ansible.builtin.shell: "dnf clean all && rm -rf /var/cache/dnf"
+  ansible.builtin.shell: "dnf clean all --disableexcludes=all && rm -rf /var/cache/dnf"
   changed_when: false
 
-# -------------------------------------------------------------------------
-# MODULE STREAM MANAGEMENT: Reset and switch to the new 610-open stream
-# -------------------------------------------------------------------------
-
-#- name: Reset nvidia-driver module stream
-#  ansible.builtin.dnf:
-#    name: nvidia-driver
-#    state: reset_modules
-
-- name: Reset nvidia-driver module stream via shell (Ansible 2.15 compatibility)
-  ansible.builtin.shell: "dnf module reset nvidia-driver -y"
+# =========================================================================
+# MODULE STREAM MANAGEMENT
+# =========================================================================
+- name: Reset nvidia-driver module stream via shell
+  ansible.builtin.shell: "dnf module reset nvidia-driver -y --disableexcludes=all"
   changed_when: false
-
-#- name: Switch and enable nvidia-driver 610-open module stream
-#  ansible.builtin.dnf:
-#    name: '@nvidia-driver:610-open'
-#    state: present
 
 - name: Track standard driver stream natively
   ansible.builtin.dnf:
     name: '@nvidia-driver:latest-dkms'
     state: present
-    disable_excludes: all  # <-- Bypasses the strict 'exclude filtering' on kernel packages
+    disable_excludes: all  # <-- This is valid here because it's a native dnf task
+
+# =========================================================================
+# CLEANUP PHASE: Force-purge all existing Nvidia/kmod infrastructure remnants
+# =========================================================================
+#- name: Completely purge all legacy and open-source Nvidia packaging components
+#  ansible.builtin.shell: "dnf remove 'nvidia*' 'kmod-nvidia*' 'cuda*' -y"
+#  failed_when: false  # Bypasses errors if a host is already pristine
+#  disable_excludes: all
+#
+#- name: Clean dnf system cache data structures
+#  ansible.builtin.shell: "dnf clean all && rm -rf /var/cache/dnf"
+#  changed_when: false
+#
+## -------------------------------------------------------------------------
+## MODULE STREAM MANAGEMENT: Reset and switch to the new 610-open stream
+## -------------------------------------------------------------------------
+#
+##- name: Reset nvidia-driver module stream
+##  ansible.builtin.dnf:
+##    name: nvidia-driver
+##    state: reset_modules
+#
+#- name: Reset nvidia-driver module stream via shell (Ansible 2.15 compatibility)
+#  ansible.builtin.shell: "dnf module reset nvidia-driver -y"
+#  changed_when: false
+#
+##- name: Switch and enable nvidia-driver 610-open module stream
+##  ansible.builtin.dnf:
+##    name: '@nvidia-driver:610-open'
+##    state: present
+#
+#- name: Track standard driver stream natively
+#  ansible.builtin.dnf:
+#    name: '@nvidia-driver:latest-dkms'
+#    state: present
+#    disable_excludes: all  # <-- Bypasses the strict 'exclude filtering' on kernel packages
 
 
 # -------------------------------------------------------------------------
