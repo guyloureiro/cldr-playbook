@@ -70,7 +70,6 @@
   ansible.builtin.dnf:
     name:
       - cuda-toolkit
-      - cuda-runtime
     state: present
     disable_excludes: all
 
