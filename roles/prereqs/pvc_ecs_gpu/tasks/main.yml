@@ -34,8 +34,20 @@
 # -------------------------------------------------------------------------
 # CLEANUP: Clear out old NvFBCOpenGL along with NVML to stop depsolve errors
 # -------------------------------------------------------------------------
-- name: Remove conflicting legacy Nvidia 525 tracking packages
-  ansible.builtin.shell: "rpm -e --nodeps nvidia-driver-NVML nvidia-driver-NvFBCOpenGL nvidia-driver-devel nvidia-fabric-manager libnvidia-nscq-525 || true"
+#- name: Remove conflicting legacy Nvidia 525 tracking packages
+#  ansible.builtin.shell: "rpm -e --nodeps nvidia-driver-NVML nvidia-driver-NvFBCOpenGL nvidia-driver-devel nvidia-fabric-manager libnvidia-nscq-525 || true"
+#  changed_when: false
+
+# =========================================================================
+# CLEANUP PHASE: Force-purge all existing Nvidia/kmod infrastructure remnants
+# =========================================================================
+- name: Completely purge all legacy and open-source Nvidia packaging components
+  ansible.builtin.shell: "dnf remove 'nvidia*' 'kmod-nvidia*' 'cuda*' -y"
+  failed_when: false  # Bypasses errors if a host is already pristine
+  disable_excludes: all
+
+- name: Clean dnf system cache data structures
+  ansible.builtin.shell: "dnf clean all && rm -rf /var/cache/dnf"
   changed_when: false
 
 # -------------------------------------------------------------------------
