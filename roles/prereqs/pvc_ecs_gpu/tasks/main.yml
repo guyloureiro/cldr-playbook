@@ -51,23 +51,39 @@
   ansible.builtin.shell: "dnf module reset nvidia-driver -y"
   changed_when: false
 
-- name: Switch and enable nvidia-driver 610-open module stream
+#- name: Switch and enable nvidia-driver 610-open module stream
+#  ansible.builtin.dnf:
+#    name: '@nvidia-driver:610-open'
+#    state: present
+
+- name: Track standard driver stream natively
   ansible.builtin.dnf:
-    name: '@nvidia-driver:610-open'
+    name: '@nvidia-driver:latest-dkms'
     state: present
+    disable_excludes: all  # <-- Bypasses the strict 'exclude filtering' on kernel packages
+
 
 # -------------------------------------------------------------------------
-# INSTALLATION: Install CUDA meta-package & driver packages via the stream
+# INSTALLATION: Install flat tracking packages directly to dodge parsing limits
 # -------------------------------------------------------------------------
-- name: Install Nvidia Driver packages via stream profiles
+- name: Install exact Nvidia Driver tracking packages directly
   ansible.builtin.dnf:
-    name: "@nvidia-driver:default"
+    name:
+      - nvidia-driver
+      - nvidia-driver-cuda
     state: present
+    disable_excludes: all
 
-- name: Install CUDA Meta-packagegit push origin --delete refs/heads/feature/rhel9-cuda-upgrade
+#- name: Install Nvidia Driver packages via stream profiles
+#  ansible.builtin.dnf:
+#    name: "@nvidia-driver:default"
+#    state: present
+
+- name: Install CUDA Meta-package
   ansible.builtin.dnf:
     name: "cuda"
     state: present
+    disable_excludes: all
 
 - name: Blacklist nouveau
   ansible.builtin.lineinfile:
