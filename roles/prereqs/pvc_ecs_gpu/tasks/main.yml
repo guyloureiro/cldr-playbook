@@ -115,9 +115,17 @@
 #    name: "@nvidia-driver:default"
 #    state: present
 
-- name: Install CUDA Meta-package
+#- name: Install CUDA Meta-package
+#    name: "cuda"
+#  ansible.builtin.dnf:
+#    state: present
+#    disable_excludes: all
+
+- name: Install Targeted CUDA Toolkit Components
   ansible.builtin.dnf:
-    name: "cuda"
+    name:
+      - cuda-toolkit
+      - cuda-runtime
     state: present
     disable_excludes: all
 
@@ -147,3 +155,4 @@
   ansible.builtin.dnf:
     name: nvidia-container-toolkit
     state: present
+
